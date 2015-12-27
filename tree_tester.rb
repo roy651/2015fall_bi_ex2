@@ -4,6 +4,8 @@ module TreeTester
     forest_results = []
     trees_results = []
     trees_errors = []
+    puts 'TESTING: '
+    iterations = test_data.length
     test_data.each.with_index do |test_row, j|
       votes = {}
       forest.each.with_index do |tree, i|
@@ -33,7 +35,11 @@ module TreeTester
           trees_errors[i] += calc_error(result, actual, test_header)
         end
       end
+      print "#{j + 1}/#{iterations}\r"
+      STDOUT.flush
     end
+    puts ''
+    puts 'ENDED:'
     forest_results
   end
 

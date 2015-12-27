@@ -51,6 +51,7 @@ class RegressionTreeNode < TreeNode
   def initialize(results_vector)
     @is_leaf = true
     results_vector.map!(&:to_f) # convert to float
+    n = results_vector.size
     @decision = results_vector.reduce(&:+) / n # sum and divide in n
     @probability = 1
   end

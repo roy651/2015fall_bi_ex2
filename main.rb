@@ -5,7 +5,7 @@ require 'byebug'
 
 # Main program code
 module EX2Main
-  def self.run(train_file_path, test_file_path, num_records, min_records)
+  def self.run(train_file_path, test_file_path, num_trees, depth, num_records, min_records)
     train_header, train_data = FileReader.read_data_file(train_file_path)
     test_header, test_data = FileReader.read_data_file(test_file_path)
     # data.each { |row| puts row}
@@ -14,8 +14,8 @@ module EX2Main
     random_forest = TreeBuilder.build_random_forest(
       train_header,
       train_data,
-      200, # iterations
-      6, # depth
+      num_trees, # iterations
+      depth, # depth
       num_records, # records
       min_records) # min records
 
@@ -32,4 +32,7 @@ module EX2Main
   end
 end
 
-# EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', 70, 30) if __FILE__ == $PROGRAM_NAME
+# EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', 200, 6, 20, 6) if __FILE__ == $PROGRAM_NAME
+# best=2100~
+# EX2Main.run('../ex2files/forestS.txt', '../ex2files/forestS2.txt', 100, 6, 70-30, 5)
+# best=2300~

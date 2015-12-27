@@ -6,13 +6,21 @@ module TreeBuilder
     features = []
     header[0].to_i.times { |i| features[i] = i }
     forest = []
-    iterations.times do
+    puts "DATA: #{header[0]} coordinates / #{header[1]} classes"
+    puts "BUILD: #{iterations} trees / #{depth} levels deep / " <<
+      "#{samples_in_iteration} records per tree / #{min_samples_in_set} records to stop"
+    puts 'RUNNING: '
+    iterations.times do |i|
       features_subset = features.sample(depth)
       forest << decision_tree_split(data.sample(samples_in_iteration),
                                     features_subset,
                                     min_samples_in_set,
                                     regression?(header))
+      print "#{i + 1}/#{iterations}\r"
+      STDOUT.flush
     end
+    puts ''
+    puts 'ENDED:'
     forest
   end
 
@@ -23,10 +31,10 @@ module TreeBuilder
   def self.decision_tree_split(data, features,
                                min_samples_in_set,
                                use_regression)
+    class_vector = data.map { |e| e[e.length - 1] }
     if use_regression
-      decision = DecisionTreeNode.new
+      decision = RegressionTreeNode.new(class_vector)
     else
-      class_vector = data.map { |e| e[e.length - 1] }
       decision = DecisionTreeNode.new(class_vector)
     end
 
