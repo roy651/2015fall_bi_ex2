@@ -25,12 +25,12 @@ module TreeTester
       end
       actual = test_row[test_row.length - 1]
       forest_results[j] = { result: prophecy,
-                            error: calc_error(prophecy, actual, header) }
+                            error: calc_error(prophecy, actual, test_header) }
 
       trees_results.each.with_index do |result, i|
         if result != actual
           trees_errors[i] = 0 if trees_errors[i].nil?
-          trees_errors[i] += calc_error(result, actual, header)
+          trees_errors[i] += calc_error(result, actual, test_header)
         end
       end
     end
@@ -48,5 +48,4 @@ module TreeTester
       prophecy == actual ? 0 : 1
     end
   end
-
 end

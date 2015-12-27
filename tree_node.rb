@@ -9,16 +9,12 @@ class TreeNode
   @right_node = nil
   @decision = nil
   @probability = -1
-  @isLeaf = true
-
-  def calc_gain
-  end
-
 end
 
 # Tree node used in 'regular' decision tree
 class DecisionTreeNode < TreeNode
   def initialize(results_vector)
+    @is_leaf = true
     @totals = TreeBuilder.totals(results_vector)
     highest = 0
     @totals.each do |result_item, result_occurence|
@@ -53,6 +49,7 @@ end
 # Tree node used in 'regular' decision tree
 class RegressionTreeNode < TreeNode
   def initialize(results_vector)
+    @is_leaf = true
     results_vector.map!(&:to_f) # convert to float
     @decision = results_vector.reduce(&:+) / n # sum and divide in n
     @probability = 1

@@ -58,10 +58,12 @@ module TreeBuilder
       best_split,
       decision_tree_split(split_left_set(best_sort_by_feature, best_index),
                           del_from_arr(features, best_feature),
-                          min_samples_in_set),
+                          min_samples_in_set,
+                          use_regression),
       decision_tree_split(split_right_set(best_sort_by_feature, best_index),
                           del_from_arr(features, best_feature),
-                          min_samples_in_set))
+                          min_samples_in_set,
+                          use_regression))
     decision
   end
 

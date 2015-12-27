@@ -14,8 +14,8 @@ module EX2Main
     random_forest = TreeBuilder.build_random_forest(
       train_header,
       train_data,
-      100, # iterations
-      2, # depth
+      200, # iterations
+      6, # depth
       num_records, # records
       min_records) # min records
 
@@ -24,7 +24,7 @@ module EX2Main
     forest_results.each do |result|
       error += result[:error]
     end
-    if header[1] == '0'
+    if test_header[1] == '0'
       Math.sqrt(error)
     else
       error
@@ -32,4 +32,4 @@ module EX2Main
   end
 end
 
-# EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt') if __FILE__ == $PROGRAM_NAME
+# EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', 70, 30) if __FILE__ == $PROGRAM_NAME
