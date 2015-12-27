@@ -9,14 +9,27 @@ module TreeBuilder
     iterations.times do
       features_subset = features.sample(depth)
       forest << decision_tree_split(data.sample(samples_in_iteration),
-                                    features_subset, min_samples_in_set)
+                                    features_subset,
+                                    min_samples_in_set,
+                                    regression?(header))
     end
     forest
   end
 
-  def self.decision_tree_split(data, features, min_samples_in_set)
-    class_vector = data.map { |e| e[e.length - 1] }
-    decision = TreeNodeOrLeaf.new(class_vector)
+  def self.regression?(header)
+    header[1] == '0'
+  end
+
+  def self.decision_tree_split(data, features,
+                               min_samples_in_set,
+                               use_regression)
+    if use_regression
+      decision = DecisionTreeNode.new
+    else
+      class_vector = data.map { |e| e[e.length - 1] }
+      decision = DecisionTreeNode.new(class_vector)
+    end
+
     return decision if stoping_condition(class_vector, features, min_samples_in_set)
 
     best_gain = 0
@@ -29,7 +42,7 @@ module TreeBuilder
       sorted_by_feature = data.sort_by { |row| row[feature] }
       sorted_by_feature.each.with_index do |row, split_index|
         split_value = row[feature]
-        split_gain = calc_gain(sorted_by_feature, split_index)
+        split_gain = calc_gain(sorted_by_feature, split_index, use_regression)
         if split_gain > best_gain
           best_gain = split_gain
           best_split = split_value
@@ -62,7 +75,30 @@ module TreeBuilder
       features.length == 0
   end
 
-  def self.calc_gain(sorted_set, split_index)
+  def self.calc_gain(sorted_set, split_index, use_regression)
+    if use_regression
+      calc_stdev_gain(sorted_set, split_index)
+    else
+      calc_gini_gain(sorted_set, split_index)
+    end
+  end
+
+  def self.calc_stdev_gain(sorted_set, split_index)
+    parent_set_stdev = calc_stdev(get_results_vector(sorted_set))
+
+    left_set_stdev = calc_stdev(get_results_vector(
+                                split_left_set(sorted_set, split_index)))
+    left_set_prob = (split_index + 1).to_f / sorted_set.length
+
+    right_set_stdev = calc_stdev(get_results_vector(
+                                 split_right_set(sorted_set, split_index)))
+    right_set_prob = 1 - left_set_prob
+
+    parent_set_stdev - (left_set_prob * left_set_stdev +
+                        right_set_prob * right_set_stdev)
+  end
+
+  def self.calc_gini_gain(sorted_set, split_index)
     parent_set_gini = calc_gini(get_results_vector(sorted_set))
 
     left_set_gini = calc_gini(get_results_vector(
@@ -79,6 +115,14 @@ module TreeBuilder
 
   def self.get_results_vector(data_set)
     data_set.map { |e| e[e.length - 1] }
+  end
+
+  def self.calc_stdev(results_vector)
+    n = results_vector.size
+    results_vector.map!(&:to_f) # convert to float
+    mean = results_vector.reduce(&:+) / n # sum and divide in n
+    sum_sqr = results_vector.map { |x| x**2 }.reduce(&:+) # sum squared values
+    Math.sqrt((sum_sqr - n * mean**2) / n) # sqrt the gap to the mean
   end
 
   def self.calc_gini(results_vector)

@@ -1,6 +1,6 @@
 # testing the tree
 module TreeTester
-  def self.test_random_forest(forest, test_data)
+  def self.test_random_forest(forest, test_data, test_header)
     forest_results = []
     trees_results = []
     trees_errors = []
@@ -25,17 +25,28 @@ module TreeTester
       end
       actual = test_row[test_row.length - 1]
       forest_results[j] = { result: prophecy,
-                            accurate: prophecy == actual }
+                            error: calc_error(prophecy, actual, header) }
+
       trees_results.each.with_index do |result, i|
         if result != actual
-          if trees_errors[i].nil?
-            trees_errors[i] = 1
-          else
-            trees_errors[i] += 1
-          end
+          trees_errors[i] = 0 if trees_errors[i].nil?
+          trees_errors[i] += calc_error(result, actual, header)
         end
       end
     end
     forest_results
   end
+
+  def self.regression?(header)
+    header[1] == '0'
+  end
+
+  def self.calc_error(prophecy, actual, header)
+    if regression?(header)
+      Math.sqrt(prophecy**2 - actual**2)
+    else
+      prophecy == actual ? 0 : 1
+    end
+  end
+
 end

@@ -19,12 +19,16 @@ module EX2Main
       num_records, # records
       min_records) # min records
 
-    right = 0
-    forest_results = TreeTester.test_random_forest(random_forest, test_data)
+    error = 0
+    forest_results = TreeTester.test_random_forest(random_forest, test_data, test_header)
     forest_results.each do |result|
-      right += 1 if result[:accurate]
+      error += result[:error]
     end
-    right
+    if header[1] == '0'
+      Math.sqrt(error)
+    else
+      error
+    end
   end
 end
 
