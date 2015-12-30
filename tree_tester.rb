@@ -11,11 +11,8 @@ module TreeTester
       forest.each.with_index do |tree, i|
         decision, probability = tree.decide(test_row)
         trees_results[i] = decision
-        if votes[decision].nil?
-          votes[decision] = 1
-        else
-          votes[decision] += 1
-        end
+        votes[decision] = 0 if votes[decision].nil?
+        votes[decision] += probability
       end
       highest = -1
       prophecy = -1
@@ -27,12 +24,12 @@ module TreeTester
       end
       actual = test_row[test_row.length - 1]
       forest_results[j] = { result: prophecy,
-                            error: calc_error(prophecy, actual, test_header) }
+                            error: calc_error(prophecy.to_f, actual.to_f, test_header) }
 
       trees_results.each.with_index do |result, i|
         if result != actual
           trees_errors[i] = 0 if trees_errors[i].nil?
-          trees_errors[i] += calc_error(result, actual, test_header)
+          trees_errors[i] += calc_error(result.to_f, actual.to_f, test_header)
         end
       end
       print "#{j + 1}/#{iterations}\r"
@@ -49,7 +46,7 @@ module TreeTester
 
   def self.calc_error(prophecy, actual, header)
     if regression?(header)
-      Math.sqrt(prophecy**2 - actual**2)
+      (prophecy - actual)**2
     else
       prophecy == actual ? 0 : 1
     end

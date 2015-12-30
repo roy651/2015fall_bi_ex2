@@ -2,18 +2,22 @@ load './tree_node.rb'
 # Tree Builder
 module TreeBuilder
   def self.build_random_forest(header, data, iterations,
-                               depth, samples_in_iteration, min_samples_in_set)
+                               depth, samples_in_iteration, 
+                               num_features, min_samples_in_set, seed)
     features = []
     header[0].to_i.times { |i| features[i] = i }
     forest = []
     puts "DATA: #{header[0]} coordinates / #{header[1]} classes"
     puts "BUILD: #{iterations} trees / #{depth} levels deep / " <<
-      "#{samples_in_iteration} records per tree / #{min_samples_in_set} records to stop"
+      "#{samples_in_iteration} records per tree / " <<
+      "#{min_samples_in_set} records to stop / #{num_features} features per level"
     puts 'RUNNING: '
     iterations.times do |i|
-      features_subset = features.sample(depth)
-      forest << decision_tree_split(data.sample(samples_in_iteration),
-                                    features_subset,
+      # features_subset = features.sample(depth, random: seed)
+      forest << decision_tree_split(data.sample(samples_in_iteration, random: seed),
+                                    features,
+                                    num_features,
+                                    depth,
                                     min_samples_in_set,
                                     regression?(header))
       print "#{i + 1}/#{iterations}\r"
@@ -28,7 +32,7 @@ module TreeBuilder
     header[1] == '0'
   end
 
-  def self.decision_tree_split(data, features,
+  def self.decision_tree_split(data, features, num_features, depth,
                                min_samples_in_set,
                                use_regression)
     class_vector = data.map { |e| e[e.length - 1] }
@@ -38,7 +42,7 @@ module TreeBuilder
       decision = DecisionTreeNode.new(class_vector)
     end
 
-    return decision if stoping_condition(class_vector, features, min_samples_in_set)
+    return decision if stoping_condition(class_vector, depth, min_samples_in_set)
 
     best_gain = 0
     best_split = nil
@@ -46,7 +50,8 @@ module TreeBuilder
     best_sort_by_feature = nil
     best_index = -1
 
-    features.each do |feature|
+    features_subset = features.sample(num_features)
+    features_subset.each do |feature|
       sorted_by_feature = data.sort_by { |row| row[feature] }
       sorted_by_feature.each.with_index do |row, split_index|
         split_value = row[feature]
@@ -65,11 +70,11 @@ module TreeBuilder
       best_feature,
       best_split,
       decision_tree_split(split_left_set(best_sort_by_feature, best_index),
-                          del_from_arr(features, best_feature),
+                          features, num_features, (depth - 1),
                           min_samples_in_set,
                           use_regression),
       decision_tree_split(split_right_set(best_sort_by_feature, best_index),
-                          del_from_arr(features, best_feature),
+                          features, num_features, (depth - 1),
                           min_samples_in_set,
                           use_regression))
     decision
@@ -79,10 +84,10 @@ module TreeBuilder
     arr.reject { |a| a == value }
   end
 
-  def self.stoping_condition(class_vector, features, min_samples_in_set)
+  def self.stoping_condition(class_vector, depth, min_samples_in_set)
     class_vector.length < min_samples_in_set ||
       class_vector.uniq.length <= 1 ||
-      features.length == 0
+      depth == 0
   end
 
   def self.calc_gain(sorted_set, split_index, use_regression)
@@ -129,10 +134,14 @@ module TreeBuilder
 
   def self.calc_stdev(results_vector)
     n = results_vector.size
-    results_vector.map!(&:to_f) # convert to float
-    mean = results_vector.reduce(&:+) / n # sum and divide in n
-    sum_sqr = results_vector.map { |x| x**2 }.reduce(&:+) # sum squared values
-    Math.sqrt((sum_sqr - n * mean**2) / n) # sqrt the gap to the mean
+    if n > 0
+      results_vector.map!(&:to_f) # convert to float
+      mean = results_vector.reduce(&:+) / n # sum and divide in n
+      sum_sqr = results_vector.map { |x| x**2 }.reduce(&:+) # sum squared values
+      Math.sqrt((sum_sqr - n * mean**2) / n) # sqrt the gap to the mean
+    else
+      0
+    end
   end
 
   def self.calc_gini(results_vector)
@@ -150,11 +159,8 @@ module TreeBuilder
   def self.totals(results_vector)
     totals = {}
     results_vector.each do |result_item|
-      if totals[result_item].nil?
-        totals[result_item] = 1  
-      else 
-        totals[result_item] += 1
-      end
+      totals[result_item] = 0 if totals[result_item].nil?
+      totals[result_item] += 1
     end
     totals
   end
