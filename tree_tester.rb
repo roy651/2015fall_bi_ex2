@@ -24,31 +24,19 @@ module TreeTester
       end
       actual = test_row[test_row.length - 1]
       forest_results[j] = { result: prophecy,
-                            error: calc_error(prophecy.to_f, actual.to_f, test_header) }
+                            error: Utils.calc_error(prophecy.to_f, actual.to_f, test_header) }
 
       trees_results.each.with_index do |result, i|
         if result != actual
           trees_errors[i] = 0 if trees_errors[i].nil?
-          trees_errors[i] += calc_error(result.to_f, actual.to_f, test_header)
+          trees_errors[i] += Utils.calc_error(result.to_f, actual.to_f, test_header)
         end
       end
-      print "#{j + 1}/#{iterations}\r"
-      STDOUT.flush
+      # print "#{j + 1}/#{iterations}\r"
+      # STDOUT.flush
     end
     puts ''
     puts 'ENDED:'
     forest_results
-  end
-
-  def self.regression?(header)
-    header[1] == '0'
-  end
-
-  def self.calc_error(prophecy, actual, header)
-    if regression?(header)
-      (prophecy - actual)**2
-    else
-      prophecy == actual ? 0 : 1
-    end
   end
 end

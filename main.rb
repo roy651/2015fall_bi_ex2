@@ -1,44 +1,51 @@
 load './file_reader.rb'
 load './tree_builder.rb'
 load './tree_tester.rb'
+load './utils.rb'
 require 'byebug'
+require 'benchmark'
 
 # Main program code
 module EX2Main
   def self.run(train_file_path, test_file_path, num_trees, depth,
-               num_records, num_features, min_records, seed)
+               num_records, num_features_per_level, min_records, seed)
+
+    # read files
     train_header, train_data = FileReader.read_data_file(train_file_path)
     test_header, test_data = FileReader.read_data_file(test_file_path)
-    # data.each { |row| puts row}
-    # puts header
 
+    # grow forest
     random_forest = TreeBuilder.build_random_forest(
       train_header,
       train_data,
       num_trees, # iterations
       depth, # depth
-      num_records, # records
-      num_features,
-      min_records, # min records
+      num_records, # to randomize at each tree
+      num_features_per_level, # to randomize each level of the tree
+      min_records, # within a group as a stop condition
       seed)
 
-    random_forest[0].print('') if random_forest.size == 1
+    # print the tree if there's only a single tree - used for debug
+    random_forest.first.print('') if random_forest.size == 1
 
-    error = 0
-    forest_results = TreeTester.test_random_forest(random_forest, test_data, test_header)
-    forest_results.each do |result|
-      error += result[:error]
-    end
+    # test the forest
+    forest_results_per_test_rec = 
+      TreeTester.test_random_forest(random_forest, test_data, test_header)
 
-    if test_header[1] == '0'
-      Math.sqrt(error / test_data.size)
-    else
-      error
-    end
+    # count the errors
+    error_count = forest_results_per_test_rec.
+      map { |result_rec| result_rec[:error]  }.reduce(&:+)
+
+    # print the results
+    Utils.print_results(error_count, test_data, test_header)
   end
 end
 
-# EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', 100, 10, 90, 2, 10, 1) if __FILE__ == $PROGRAM_NAME
+time = Benchmark.measure {
+  EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', 100, 10, 90, 2, 10, 1) if __FILE__ == $PROGRAM_NAME
+}
+puts time.real # print benchmark data
+
 # best=2450~ => 2600
 # EX2Main.run('../ex2files/forestS.txt', '../ex2files/forestS2.txt', 100, 6, 70, 6, 5, 1)
 # best=2500~ => 3600

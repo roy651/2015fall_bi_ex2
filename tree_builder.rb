@@ -1,35 +1,35 @@
 load './tree_node.rb'
-# Tree Builder
+# Tree Builder... actually a forest builder
 module TreeBuilder
+  # main control function for growing the forest
   def self.build_random_forest(header, data, iterations,
                                depth, samples_in_iteration, 
-                               num_features, min_samples_in_set, seed)
-    features = []
-    header[0].to_i.times { |i| features[i] = i }
-    forest = []
+                               num_features_per_level, 
+                               min_samples_in_set, seed)
+    # awesome printing...
     puts "DATA: #{header[0]} coordinates / #{header[1]} classes"
     puts "BUILD: #{iterations} trees / #{depth} levels deep / " <<
       "#{samples_in_iteration} records per tree / " <<
-      "#{min_samples_in_set} records to stop / #{num_features} features per level"
+      "#{min_samples_in_set} records to stop / #{num_features_per_level} features per level"
     puts 'RUNNING: '
+
+    forest = []
+    # run {iteration} trees in the forest...
     iterations.times do |i|
-      # features_subset = features.sample(depth, random: seed)
-      forest << decision_tree_split(data.sample(samples_in_iteration, random: seed),
-                                    features,
-                                    num_features,
-                                    depth,
-                                    min_samples_in_set,
-                                    regression?(header))
-      print "#{i + 1}/#{iterations}\r"
-      STDOUT.flush
+      # buiid each tree recursively from the root
+      forest << decision_tree_split(
+                  data.sample(samples_in_iteration, random: seed), # randomize N recs for each tree
+                  (0..Utils.num_of_features(header)).to_a, # pass all the features to chose from at each level
+                  num_features_per_level, # to randomize at each level
+                  depth,
+                  min_samples_in_set,
+                  Utils.regression?(header))
+      # print "#{i + 1}/#{iterations}\r"
+      # STDOUT.flush
     end
     puts ''
-    puts 'ENDED:'
+    puts 'ENDED.'
     forest
-  end
-
-  def self.regression?(header)
-    header[1] == '0'
   end
 
   def self.decision_tree_split(data, features, num_features, depth,
