@@ -64,3 +64,12 @@ puts "TIME: #{time.real}" # print benchmark data
 # best 0.18~ => 0.12
 # EX2Main.run('../ex2files/sphere.txt', '../ex2files/sphere2.txt', trees:100, depth:15, records:70, features:10, min_rec:10)
 # best 0.70~ => 0.57 
+
+# EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', 200, 10, 70, 2, 3, 1) if __FILE__ == $PROGRAM_NAME
+# best=2500~ => 2600
+# EX2Main.run('../ex2files/forestS.txt', '../ex2files/forestS2.txt', 200, 10, 70, 6, 5, 1) if __FILE__ == $PROGRAM_NAME
+# best=2600~ => 3600
+# EX2Main.run('../ex2files/forestR.txt', '../ex2files/forestR2.txt', 200, 10, 70, 6, 5, 1) if __FILE__ == $PROGRAM_NAME
+# best 0.18~ => 0.12
+# EX2Main.run('../ex2files/sphere.txt', '../ex2files/sphere2.txt', 200, 10, 70, 6, 5, 1) if __FILE__ == $PROGRAM_NAME
+# best 0.70~ => 0.57 
