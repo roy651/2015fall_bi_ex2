@@ -61,6 +61,7 @@ module Utils
         print "#{(result.to_f).round(2)}, "
       end
     end
+    puts
   end
 
   def self.get_results_vector(data_set)

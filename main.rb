@@ -53,8 +53,7 @@ EX2Main.run('../ex2files/forestR.txt', '../ex2files/forestR2.txt', 30, 10, 100, 
 # best 0.18~ => 0.12
 EX2Main.run('../ex2files/sphere.txt', '../ex2files/sphere2.txt', 30, 10, 100, 10, 5, 1) if __FILE__ == $PROGRAM_NAME
 # best 0.70~ => 0.57 
-}
-puts 
+} 
 puts "TIME: #{time.real}" # print benchmark data
 
 # EX2Main.run('../ex2files/data.txt', '../ex2files/data2.txt', trees:100, depth:10, records:90, features:2, min_rec:10)
