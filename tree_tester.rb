@@ -6,8 +6,7 @@ module TreeTester
     trees_results = []
     trees_errors = []
     prediction = -1
-    puts 'TESTING: '
-    iterations = test_data.length
+
     #iterate over the test records
     test_data.each.with_index do |test_row, j|
       votes = {}
@@ -33,9 +32,9 @@ module TreeTester
       end
       # log progress
       if ((j + 1) % 100 == 0)
-        print "#{j + 1}/#{iterations}\r"
+        print "#{j + 1}/#{test_data.length}\r"
         STDOUT.flush
-     end
+      end
     end
     puts ''
     puts 'ENDED:'

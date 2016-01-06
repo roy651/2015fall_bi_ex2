@@ -33,7 +33,7 @@ class TreeNode
   end
 
   # awesome printing
-  def print(prefix)
+  def print(prefix = '')
     if @is_leaf
       puts "#{@decision} / #{@probability}"
     else
@@ -42,6 +42,17 @@ class TreeNode
       puts "#{prefix}a#{@feature} > #{@split}"
       @right_node.print(prefix + '|    ')
     end
+  end
+
+  def get_features_score(result = {}, depth = 1.0)
+    unless @is_leaf
+      feature_name = 'a' + @feature.to_s
+      result[feature_name] = 0 if result[feature_name].nil?
+      result[feature_name] += (1.0 / depth)
+      @left_node.get_features_score(result, depth * 2)
+      @right_node.get_features_score(result, depth * 2)
+    end
+    result
   end
 
   def initialize(results_vector)

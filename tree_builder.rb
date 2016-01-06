@@ -18,17 +18,15 @@ module TreeBuilder
     iterations.times do |i|
       # buiid each tree recursively from the root
       forest << decision_tree_split(
-                  data.sample(samples_in_iteration, random: seed), # randomize N recs for each tree
+                  samples_in_iteration.times.map { data.sample(random:seed) }, # randomize N recs for each tree with repetitions
                   (0..(Utils.num_of_features(header) - 1)).to_a, # pass all the features to choose from at each level
                   num_features_per_level, # to randomize at each level
                   depth,
                   min_samples_in_set,
                   Utils.regression?(header), seed)
       # log progress
-      if ((i + 1) % 10 == 0)
-        print "#{i + 1}/#{iterations}\r"
-        STDOUT.flush
-      end
+      print "#{i + 1}/#{iterations}\r"
+      STDOUT.flush
     end
 
     #log..
@@ -66,7 +64,6 @@ module TreeBuilder
 
     #randomize the set of features - maintain a consistent seed for re-runs
     features_subset = features.sample(num_features, random: seed)
-    
     #iterate over selected features
     features_subset.each do |feature|
       # sort according to the selected feature
@@ -87,6 +84,9 @@ module TreeBuilder
         end
       end
     end
+
+    # yet another stop condition - no gain at any possible split => it's a leaf!
+    return node_or_leaf if best_result[:gain] == 0
 
     # since this is ot a leaf (failed stop condition..) - recursively operate on
     # the two sides of the split and continue to grow their branches
