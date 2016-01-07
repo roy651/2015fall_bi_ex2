@@ -29,11 +29,11 @@ module TreeBuilder
       STDOUT.flush
     end
 
-    #log..
+    # log..
     puts ''
     puts 'ENDED.'
-    
-    #return value
+
+    # return value
     forest
   end
 
@@ -50,9 +50,11 @@ module TreeBuilder
     if use_regression
       node_or_leaf.extend(RegressionNode)
       calc_func = Utils.calc_stddev_func
+      incremental_func = Utils.calc_stddev_incremental!
     else
       node_or_leaf.extend(DecisionNode)
       calc_func = Utils.calc_gini_func
+      incremental_func = Utils.calc_gini_incremental!
     end
     node_or_leaf.init
 
@@ -62,18 +64,38 @@ module TreeBuilder
     # construct the winning structure skeleton
     best_result = {gain: 0, split: nil, feature: nil, sort_by_feature: nil, index: -1}
 
-    #randomize the set of features - maintain a consistent seed for re-runs
+    # randomize the set of features - maintain a consistent seed for re-runs
     features_subset = features.sample(num_features, random: seed)
-    #iterate over selected features
+    # iterate over selected features
     features_subset.each do |feature|
       # sort according to the selected feature
       sorted_by_feature = data.sort_by { |row| row[feature] }
-      #iterate over the ordered samples
+
+      # calc the purity of the parent set WRT the current feature
+      # preserve the calculation intermediate data in "memory" objects
+      # and later pass them on to the iterations of calculations of the splits
+      # to be able to calculate incrementally in o(1) instead of o(n)
+      right_memory_obj =
+        calc_func.call(Utils.get_results_vector(sorted_by_feature))
+      parent_purity = right_memory_obj[:purity]
+      # need to create a fake memory object for the fake left split in order
+      # to serve the start of the iteration of the splits
+      left_memory_obj = calc_func.call([])
+
+      # iterate over the ordered samples
       sorted_by_feature.each.with_index do |row, split_index|
         # get current split value
         split_value = row[feature]
         # the "core" of the algo - calc the gain of the current split
-        split_gain = calc_gain(sorted_by_feature, split_index, calc_func)
+        # receives also the "memory" data objects to pass on the to
+        # the next cycle of the iteration
+        split_gain, left_memory_obj, right_memory_obj =
+          calc_gain!(sorted_by_feature,
+                     split_index,
+                     incremental_func,
+                     left_memory_obj,
+                     right_memory_obj,
+                     parent_purity)
         # save as best if it is.... well - best...
         if split_gain > best_result[:gain]
           best_result[:gain] = split_gain
@@ -93,18 +115,18 @@ module TreeBuilder
     node_or_leaf.set_as_node(
       best_result[:feature],
       best_result[:split],
-      decision_tree_split(Utils.split_left_set(best_result[:sort_by_feature], 
+      decision_tree_split(Utils.split_left_set(best_result[:sort_by_feature],
                           best_result[:index]),
                           features, num_features, (depth - 1),
                           min_samples_in_set,
                           use_regression, seed),
-      decision_tree_split(Utils.split_right_set(best_result[:sort_by_feature], 
+      decision_tree_split(Utils.split_right_set(best_result[:sort_by_feature],
                           best_result[:index]),
                           features, num_features, (depth - 1),
                           min_samples_in_set,
                           use_regression, seed))
 
-    #return current node to the higher level
+    # return current node to the higher level
     node_or_leaf
   end
 
@@ -115,20 +137,25 @@ module TreeBuilder
       depth == 0
   end
 
-  # gain: parent node's value minus probability weighted sum value of child nodes
-  def self.calc_gain(sorted_set, split_index, calc_func)
-    parent_set_value = calc_func.call(Utils.get_results_vector(sorted_set))
-
-    left_set_value = calc_func.call(Utils.get_results_vector(
-                                   Utils.split_left_set(sorted_set, split_index)))
+  # gain = parent node's value minus probability weighted sum of child nodes
+  # called with the "memory" data from the previous split in order to calculate
+  # the purity (and gain) incrementally and save processing time from o(n) to o(1)
+  # returns - the new "memory" objects for the next cycle of calculations
+  def self.calc_gain!(sorted_set, split_index, incremental_func,
+                     left_memory_obj, right_memory_obj, parent_purity)
+    left_memory_obj = incremental_func.call(left_memory_obj,
+                                            sorted_set[split_index].last,
+                                            true)
     left_set_prob = (split_index + 1).to_f / sorted_set.length
 
-    right_set_value = calc_func.call(Utils.get_results_vector(
-                                    Utils.split_right_set(sorted_set, split_index)))
+    right_memory_obj = incremental_func.call(right_memory_obj,
+                                             sorted_set[split_index].last,
+                                             false)
     right_set_prob = 1 - left_set_prob
 
     # return the result
-    parent_set_value - (left_set_prob * left_set_value +
-                       right_set_prob * right_set_value)
+    gain = parent_purity - (left_set_prob * left_memory_obj[:purity] +
+                            right_set_prob * right_memory_obj[:purity])
+    return gain, left_memory_obj, right_memory_obj
   end
 end
